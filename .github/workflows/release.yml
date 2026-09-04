@@ -81,13 +81,17 @@ jobs:
       - run: cargo publish --dry-run --locked
 
       # …and look at what went in. A dry run is happy to package anything under the size limit:
-      # `cargo package` does not always honour `.gitignore`, and once shipped 1282 files of
-      # mutation-testing output that git was ignoring. `exclude` in Cargo.toml is the fix; this is
-      # the check that it still works.
+      # `cargo package` shipped 1282 files of mutation-testing output that git was ignoring, at
+      # 7 MiB compressed, and said nothing. `exclude` in Cargo.toml is the fix; this is the check
+      # that it still works.
+      #
+      # The allowlist is what a *committed* tree packages. Cargo lists files differently when they
+      # are untracked, so derive it with `cargo package --list` on a clean checkout — not on a
+      # working copy where half the repository is still untracked.
       - name: the package contains only what it should
         run: |
           set -euo pipefail
-          allowed='^(\.cargo_vcs_info\.json|CHANGELOG\.md|Cargo\.lock|Cargo\.toml|Cargo\.toml\.orig|LICENSE-APACHE|LICENSE-MIT|README\.md|benches|clippy\.toml|deny\.toml|rustfmt\.toml|src|tests)$'
+          allowed='^(\.cargo_vcs_info\.json|\.gitignore|CHANGELOG\.md|Cargo\.lock|Cargo\.toml|Cargo\.toml\.orig|LICENSE-APACHE|LICENSE-MIT|README\.md|benches|clippy\.toml|deny\.toml|rustfmt\.toml|src|tests)$'
           unexpected=$(cargo package --list --locked | cut -d/ -f1 | sort -u | grep -Ev "$allowed" || true)
           if [ -n "$unexpected" ]; then
             echo "::error::unexpected entries in the package: $unexpected"
