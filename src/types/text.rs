@@ -206,19 +206,19 @@ impl InfoText {
             return false;
         }
         let mut rest = parts.peekable();
-        if let Some(region) = rest.peek() {
-            if *region != "x" {
-                let region = rest.next().unwrap_or_default();
-                if !matches!(region.len(), 2 | 3) || !region.bytes().all(|c| c.is_ascii_uppercase()) {
+        if let Some(region) = rest.peek()
+            && *region != "x"
+        {
+            let region = rest.next().unwrap_or_default();
+            if !matches!(region.len(), 2 | 3) || !region.bytes().all(|c| c.is_ascii_uppercase()) {
+                return false;
+            }
+            if let Some(script) = rest.peek()
+                && *script != "x"
+            {
+                let script = rest.next().unwrap_or_default();
+                if script.len() != 4 || !script.bytes().all(|c| c.is_ascii_alphabetic()) {
                     return false;
-                }
-                if let Some(script) = rest.peek() {
-                    if *script != "x" {
-                        let script = rest.next().unwrap_or_default();
-                        if script.len() != 4 || !script.bytes().all(|c| c.is_ascii_alphabetic()) {
-                            return false;
-                        }
-                    }
                 }
             }
         }

@@ -4,6 +4,7 @@
 //! cargo run -p xtask -- no-floats     # no f32/f64 anywhere but the JSON boundary
 //! cargo run -p xtask -- endpoints     # the endpoint table matches the vendored OpenAPI
 //! cargo run -p xtask -- errata        # every recorded erratum still exists upstream
+//! cargo run -p xtask -- features      # every feature compiles on its own, warnings denied
 //! cargo run -p xtask -- seed-fuzz     # write conformant seeds into the fuzz corpus
 //! cargo run -p xtask -- spec-sync     # the vendored specs match their pinned commits
 //! cargo run -p xtask -- spec-sync --upstream   # …and Hubject has not moved them since
@@ -35,6 +36,7 @@ fn main() -> ExitCode {
         "no-floats" => vec![no_floats(&root)],
         "endpoints" => vec![endpoints(&root)],
         "errata" => vec![errata(&root)],
+        "features" => vec![features(&root)],
         "seed-fuzz" => vec![seed_fuzz(&root)],
         "spec-sync" => vec![spec_sync(&root, upstream)],
         "all" => vec![no_floats(&root), endpoints(&root), errata(&root), spec_sync(&root, upstream)],
@@ -314,6 +316,58 @@ fn spec_sync(root: &Path, upstream: bool) -> Check {
             "spec-sync: the specifications have moved. Review the diff, update the crate and the \
              pins in xtask, then update the errata registry if a disagreement was fixed:\n{}",
             drifted.iter().map(|s| format!("  {s}\n")).collect::<String>()
+        )))
+    }
+}
+
+// --- features -------------------------------------------------------------------------------
+
+/// Every cargo feature has to compile on its own, with warnings denied.
+///
+/// Two halves, and both are load-bearing. **On its own**, because `--all-features` is exactly the
+/// build that cannot tell whether a feature declares what it needs. **Warnings denied**, because
+/// the way this fails is an item that only has a consumer under some other feature — a
+/// `pub(crate) use` for a module that is not compiled — and that is a warning, not an error.
+///
+/// This lives here rather than in the workflow so that the local run and the CI run are the same
+/// run. They were not, once: the matrix was checked locally without `-D warnings` and passed while
+/// CI failed on three unused re-exports.
+fn features(root: &Path) -> Check {
+    const FEATURES: &[&str] =
+        &["cpo", "emp", "transport", "client", "server", "sync", "eichrecht", "testkit", "schema", "cli"];
+
+    let mut broken = String::new();
+    let mut run = |args: &[&str], label: &str| {
+        let output = std::process::Command::new(std::env::var("CARGO").as_deref().unwrap_or("cargo"))
+            .current_dir(root)
+            .env("RUSTFLAGS", "-D warnings")
+            .args(args)
+            .output();
+        match output {
+            Ok(output) if output.status.success() => {}
+            Ok(output) => {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                let first = stderr.lines().find(|l| l.starts_with("error")).unwrap_or("failed");
+                let _ = writeln!(broken, "  {label}: {first}");
+            }
+            Err(e) => {
+                let _ = writeln!(broken, "  {label}: cargo could not be run: {e}");
+            }
+        }
+    };
+
+    for feature in FEATURES {
+        run(&["check", "--quiet", "--no-default-features", "--features", feature, "--all-targets"], feature);
+    }
+    run(&["check", "--quiet", "--no-default-features"], "(no features)");
+    run(&["check", "--quiet", "--no-default-features", "--features", "full", "--all-targets"], "full");
+
+    if broken.is_empty() {
+        Ok(format!("features: each of {} compiles alone, plus none and full", FEATURES.len()))
+    } else {
+        Err(Failure::Failed(format!(
+            "features: a feature that only compiles when another happens to be on is not a \
+             feature.\n{broken}"
         )))
     }
 }

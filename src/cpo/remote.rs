@@ -174,14 +174,14 @@ impl Validate for AuthorizeRemoteReservationStartRequest {
         self.identification.validate_in_process(v, IdentificationProcess::RemoteAuthorization);
         v.leave();
         check_provider_matches_contract(v, &self.provider_id, &self.identification);
-        if let Some(duration) = self.duration {
-            if !(1..=99).contains(&duration) {
-                v.report_at(
-                    "Duration",
-                    ViolationCode::OutOfRange,
-                    format!("a reservation lasts 1 to 99 minutes, not {duration}"),
-                );
-            }
+        if let Some(duration) = self.duration
+            && !(1..=99).contains(&duration)
+        {
+            v.report_at(
+                "Duration",
+                ViolationCode::OutOfRange,
+                format!("a reservation lasts 1 to 99 minutes, not {duration}"),
+            );
         }
         validate_fields!(
             self,

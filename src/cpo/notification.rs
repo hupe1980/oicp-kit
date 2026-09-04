@@ -93,14 +93,15 @@ pub struct ChargingNotificationStart {
 impl Validate for ChargingNotificationStart {
     fn validate_in(&self, v: &mut Validator) {
         check_type(v, self.notification_type, ChargingNotificationType::Start);
-        if let (Some(session_start), true) = (&self.session_start, self.charging_start.is_well_formed()) {
-            if session_start.is_well_formed() && session_start > &self.charging_start {
-                v.report_at(
-                    "ChargingStart",
-                    ViolationCode::Inconsistent,
-                    "energy started flowing before the session began",
-                );
-            }
+        if let (Some(session_start), true) = (&self.session_start, self.charging_start.is_well_formed())
+            && session_start.is_well_formed()
+            && session_start > &self.charging_start
+        {
+            v.report_at(
+                "ChargingStart",
+                ViolationCode::Inconsistent,
+                "energy started flowing before the session began",
+            );
         }
         validate_fields!(
             self,
@@ -322,19 +323,19 @@ impl Validate for ChargingNotificationEnd {
         check_type(v, self.notification_type, ChargingNotificationType::End);
         if let (Some(start), Some(end), Some(consumed)) =
             (self.meter_value_start, self.meter_value_end, self.consumed_energy)
+            && end - start != consumed
         {
-            if end - start != consumed {
-                v.report_at(
-                    "ConsumedEnergy",
-                    ViolationCode::Inconsistent,
-                    format!("ConsumedEnergy is {consumed} but the meter readings differ by {}", end - start),
-                );
-            }
+            v.report_at(
+                "ConsumedEnergy",
+                ViolationCode::Inconsistent,
+                format!("ConsumedEnergy is {consumed} but the meter readings differ by {}", end - start),
+            );
         }
-        if let (Some(charging_start), true) = (&self.charging_start, self.charging_end.is_well_formed()) {
-            if charging_start.is_well_formed() && charging_start > &self.charging_end {
-                v.report_at("ChargingEnd", ViolationCode::Inconsistent, "charging ended before it started");
-            }
+        if let (Some(charging_start), true) = (&self.charging_start, self.charging_end.is_well_formed())
+            && charging_start.is_well_formed()
+            && charging_start > &self.charging_end
+        {
+            v.report_at("ChargingEnd", ViolationCode::Inconsistent, "charging ended before it started");
         }
         validate_fields!(
             self,

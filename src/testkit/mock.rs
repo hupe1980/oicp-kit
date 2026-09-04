@@ -132,21 +132,21 @@ pub enum Event {
 /// identification names no card, so the broker — which can resolve one to the other and the mock
 /// cannot — is given the benefit of the doubt rather than refusing a legitimate stop.
 fn medium_mismatch(started_with: &Identification, stopping_with: &Identification) -> Option<String> {
-    if let (Some(opened), Some(closing)) = (started_with.evco_id(), stopping_with.evco_id()) {
-        if opened != closing {
-            return Some(format!(
-                "the session was started with contract {opened} and this stop presents {closing}; \
+    if let (Some(opened), Some(closing)) = (started_with.evco_id(), stopping_with.evco_id())
+        && opened != closing
+    {
+        return Some(format!(
+            "the session was started with contract {opened} and this stop presents {closing}; \
                  a session may only be stopped with the medium that started it"
-            ));
-        }
+        ));
     }
-    if let (Some(opened), Some(closing)) = (started_with.uid(), stopping_with.uid()) {
-        if opened != closing {
-            return Some(format!(
-                "the session was started with card {opened} and this stop presents {closing}; \
+    if let (Some(opened), Some(closing)) = (started_with.uid(), stopping_with.uid())
+        && opened != closing
+    {
+        return Some(format!(
+            "the session was started with card {opened} and this stop presents {closing}; \
                  a session may only be stopped with the medium that started it"
-            ));
-        }
+        ));
     }
     None
 }
@@ -407,10 +407,10 @@ impl MockHubject {
                     },
                     Clone::clone,
                 );
-                if let Some(wanted) = &request.evse_status {
-                    if status.evse_status != *wanted {
-                        continue;
-                    }
+                if let Some(wanted) = &request.evse_status
+                    && status.evse_status != *wanted
+                {
+                    continue;
                 }
                 by_operator
                     .entry(record.operator_id.canonical())

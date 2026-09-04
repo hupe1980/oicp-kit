@@ -142,13 +142,14 @@ fn extract_names(der: &[u8]) -> (Option<String>, Vec<String>) {
         let len = der[i + 1] as usize;
         // 0x0c UTF8String, 0x13 PrintableString, 0x16 IA5String — the ones names live in.
         if matches!(tag, 0x0c | 0x13 | 0x16) && len > 0 && len < 128 && i + 2 + len <= der.len() {
-            if let Ok(text) = core::str::from_utf8(&der[i + 2..i + 2 + len]) {
-                if text.chars().all(|c| c.is_ascii_graphic() || c == ' ') && text.len() >= 3 {
-                    if subject.is_none() {
-                        subject = Some(text.to_owned());
-                    }
-                    sans.push(text.to_owned());
+            if let Ok(text) = core::str::from_utf8(&der[i + 2..i + 2 + len])
+                && text.chars().all(|c| c.is_ascii_graphic() || c == ' ')
+                && text.len() >= 3
+            {
+                if subject.is_none() {
+                    subject = Some(text.to_owned());
                 }
+                sans.push(text.to_owned());
             }
             i += 2 + len;
         } else {

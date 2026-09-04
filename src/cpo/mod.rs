@@ -51,4 +51,7 @@ pub use remote::{
     AuthorizeRemoteStartRequest, AuthorizeRemoteStopRequest,
 };
 
+// `EvseDataRecord` and `PullEvseDataRecord` share their validation, and the second lives in
+// `emp`. With `emp` off there is no second caller, and the re-export is dead.
+#[cfg(feature = "emp")]
 pub(crate) use evse::validate_evse_common;

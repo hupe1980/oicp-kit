@@ -118,7 +118,8 @@ rather than concluding the library cannot count.
   leaves the same state as a full pull.**
 * End-to-end sequences through `MockHubject`, over a real socket as well as in process, and
   snapshots of the JSON, the endpoint table and the errata registry.
-* Every feature built on its own in CI, as well as together, and the MSRV checked on every push.
+* `cargo run -p xtask -- features` builds every feature on its own with warnings denied, and CI
+  calls it, so the local run and the CI run cannot drift apart. MSRV 1.88, checked on every push.
 * `cargo deny` on every push, over licences, advisories, wildcards and sources.
 * The `fuzz/` workspace — nested, so the root `check`, `clippy` and `test` all skip it —
   type-checked in CI, and a nightly run of all three targets from the seeded corpus.

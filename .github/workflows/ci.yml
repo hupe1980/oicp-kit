@@ -42,17 +42,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      # A feature that only compiles when another happens to be on is not a feature, and
-      # `--all-features` is exactly the build that cannot tell.
-      - run: |
-          set -euo pipefail
-          for feature in cpo emp transport client server sync eichrecht testkit schema cli; do
-            echo "::group::$feature"
-            cargo check --no-default-features --features "$feature" --all-targets
-            echo "::endgroup::"
-          done
-      - run: cargo check --no-default-features
-      - run: cargo check --no-default-features --features full
+      # The matrix lives in xtask so the local run and this run are the same run. They were not,
+      # once: checked locally without `-D warnings`, it passed while this job failed.
+      - run: cargo run -p xtask -- features
 
   fuzz:
     name: fuzz targets compile
@@ -71,8 +63,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Kept in step with `rust-version` in Cargo.toml: the first release with edition 2024.
-      - uses: dtolnay/rust-toolchain@1.85.0
+      # Kept in step with `rust-version` in Cargo.toml. The crate's own code needs only
+      # edition 2024; `bon`, `darling` and `time` are what put the floor at 1.88.
+      - uses: dtolnay/rust-toolchain@1.88.0
       - uses: Swatinem/rust-cache@v2
       - run: cargo check --all-features --all-targets
 

@@ -1,5 +1,5 @@
 # The oldest Rust this crate supports; keeps clippy from suggesting newer APIs.
-msrv = "1.85"
+msrv = "1.88"
 
 # Note on floats: energy and money in OICP are never floats, and this crate enforces that — but
 # not here. `clippy::disallowed_types` fires on the `visit_f64` that serde's `Deserialize` derive

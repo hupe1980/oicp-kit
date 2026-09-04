@@ -102,6 +102,9 @@ mod identification;
 mod ids;
 mod number;
 mod open_enum;
+// Opening times are a property of a charging point, so this is only reachable through
+// `EvseDataRecord` and `PullEvseDataRecord`.
+#[cfg(feature = "cpo")]
 mod opening;
 mod status;
 mod text;
@@ -130,6 +133,8 @@ pub use ids::{
 };
 pub use number::Number;
 pub use open_enum::UnknownVariant;
+#[cfg(feature = "cpo")]
+#[cfg_attr(docsrs, doc(cfg(feature = "cpo")))]
 pub use opening::{Opening, UnknownReason};
 pub use status::{Code, CodeArea, StatusCode};
 pub use text::{InfoText, PartnerSessionId, Text, TextError};
@@ -137,5 +142,8 @@ pub use validate::{Validate, Validator, Violation, ViolationCode, Violations};
 
 #[allow(unused_imports)]
 pub(crate) use builder::strict_builder;
+#[cfg(feature = "cpo")]
 pub(crate) use opening::is_open_at as opening_at;
+// The wire models reach the macro through this alias; inside `types` it is imported directly.
+#[cfg(feature = "cpo")]
 pub(crate) use validate::validate_fields;

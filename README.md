@@ -294,9 +294,10 @@ CI diffs it against Hubject's published OpenAPI documents.
 
 ## Contributing
 
-`cargo test --all-features` and `cargo run -p xtask -- all` must pass, and every feature must
-build on its own — `--all-features` is exactly the build that cannot tell whether a feature
-declares what it needs.
+`cargo test --all-features`, `cargo run -p xtask -- all` and `cargo run -p xtask -- features` must
+pass. The last one builds each feature on its own with warnings denied: `--all-features` is exactly
+the build that cannot tell whether a feature declares what it needs, and the way that fails is a
+warning rather than an error.
 
 The `endpoints`, `errata` and `spec-sync` checks read the Hubject specifications from `specs/`
 (gitignored, because they are third-party publications); without them they skip rather than fail.

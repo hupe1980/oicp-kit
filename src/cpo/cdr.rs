@@ -261,18 +261,18 @@ impl Validate for ChargeDetailRecord {
         // ConsumedEnergy is *defined* as MeterValueEnd - MeterValueStart. When both readings are
         // present and the arithmetic disagrees, one of the three numbers is wrong, and the EMP
         // will be invoiced for the one this field carries.
-        if let Some(metered) = self.metered_energy() {
-            if metered != self.consumed_energy {
-                v.report_at(
-                    "ConsumedEnergy",
-                    ViolationCode::Inconsistent,
-                    format!(
-                        "ConsumedEnergy is {} but MeterValueEnd - MeterValueStart is {metered}; \
+        if let Some(metered) = self.metered_energy()
+            && metered != self.consumed_energy
+        {
+            v.report_at(
+                "ConsumedEnergy",
+                ViolationCode::Inconsistent,
+                format!(
+                    "ConsumedEnergy is {} but MeterValueEnd - MeterValueStart is {metered}; \
                          the spec defines the first as the second",
-                        self.consumed_energy
-                    ),
-                );
-            }
+                    self.consumed_energy
+                ),
+            );
         }
         if self.consumed_energy.is_negative() {
             v.report_at(
@@ -281,14 +281,14 @@ impl Validate for ChargeDetailRecord {
                 "a session cannot consume negative energy",
             );
         }
-        if let (Some(start), Some(end)) = (self.meter_value_start, self.meter_value_end) {
-            if end < start {
-                v.report_at(
-                    "MeterValueEnd",
-                    ViolationCode::Inconsistent,
-                    format!("the meter reads {end} at the end but {start} at the start"),
-                );
-            }
+        if let (Some(start), Some(end)) = (self.meter_value_start, self.meter_value_end)
+            && end < start
+        {
+            v.report_at(
+                "MeterValueEnd",
+                ViolationCode::Inconsistent,
+                format!("the meter reads {end} at the end but {start} at the start"),
+            );
         }
 
         // The four timestamps have an order. Charging happens inside the session.
@@ -310,16 +310,16 @@ impl Validate for ChargeDetailRecord {
         // "In total you can provide maximum 10 metering signature values." A long session at a
         // charging point that signs a reading every two minutes exceeds that, and truncating the
         // list would destroy the driver's ability to verify the bill — see defect OICP23-D003.
-        if let Some(values) = &self.signed_metering_values {
-            if values.len() > 10 {
-                let note = crate::types::SpecDefect::get("OICP23-D003")
-                    .map_or_else(String::new, |d| format!("; {}", d.note()));
-                v.report_at(
-                    "SignedMeteringValues",
-                    ViolationCode::TooManyItems,
-                    format!("a CDR carries at most 10 signed metering values, not {}{note}", values.len()),
-                );
-            }
+        if let Some(values) = &self.signed_metering_values
+            && values.len() > 10
+        {
+            let note = crate::types::SpecDefect::get("OICP23-D003")
+                .map_or_else(String::new, |d| format!("; {}", d.note()));
+            v.report_at(
+                "SignedMeteringValues",
+                ViolationCode::TooManyItems,
+                format!("a CDR carries at most 10 signed metering values, not {}{note}", values.len()),
+            );
         }
 
         validate_fields!(

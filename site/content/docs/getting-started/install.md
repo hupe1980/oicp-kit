@@ -56,5 +56,5 @@ oicp id 'DE*AB7*E840*6487'
 
 ## Minimum supported Rust
 
-**1.85** — the first release with edition 2024, which this crate uses. It is checked in CI on every
-push, so it is a fact rather than an intention. Raising it is a minor version bump.
+**1.88**, checked in CI on every push. The crate's own code needs only edition 2024 (1.85); the
+floor comes from `bon`, `darling` and `time`. Raising it is a minor version bump.

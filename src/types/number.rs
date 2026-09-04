@@ -235,10 +235,10 @@ impl Serialize for Number {
         // holds. A fractional value goes out through f64, which `serde_json` prints with the
         // shortest round-tripping representation — the original decimal, for every value in
         // OICP's domain. `json_round_trips` reports the values where that is not true.
-        if self.0.is_integer() {
-            if let Some(i) = self.0.to_i64() {
-                return s.serialize_i64(i);
-            }
+        if self.0.is_integer()
+            && let Some(i) = self.0.to_i64()
+        {
+            return s.serialize_i64(i);
         }
         match self.0.to_f64() {
             Some(f) => s.serialize_f64(f),

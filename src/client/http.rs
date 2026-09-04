@@ -174,10 +174,10 @@ impl Transport {
 
         // Hubject answers a refused operation with 200 and Result: false. Check that before
         // decoding into `T`, so a caller can never mistake a refusal for a success.
-        if let Ok(ack) = serde_json::from_str::<Acknowledgement>(&text) {
-            if !ack.is_success() {
-                return Err(OicpError::rejected(ack));
-            }
+        if let Ok(ack) = serde_json::from_str::<Acknowledgement>(&text)
+            && !ack.is_success()
+        {
+            return Err(OicpError::rejected(ack));
         }
 
         decode(&text)
