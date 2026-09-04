@@ -1,0 +1,62 @@
+name: spec-sync
+
+# Hubject edits the OICP 2.3 documents **in place**, with no version bump. Nothing in this
+# repository changes when they do, so the only way to find out is to ask — on a schedule, because
+# a check that runs when someone happens to remember is not a check.
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  upstream:
+    name: has Hubject moved the specification?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      # Compares each pinned commit in xtask against what the remote holds now. No clone needed:
+      # one ref lookup per repository.
+      - id: check
+        run: |
+          set -uo pipefail
+          if cargo run -q -p xtask -- spec-sync --upstream > drift.txt 2>&1; then
+            echo "moved=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "moved=true" >> "$GITHUB_OUTPUT"
+          fi
+          cat drift.txt
+
+      # A failed scheduled run is an email somebody archives. An issue is a thing with an owner —
+      # deduplicated by title, so a spec that stays moved does not open one every Monday.
+      - name: open an issue
+        if: steps.check.outputs.moved == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          title='Hubject has edited the OICP 2.3 specifications'
+          if gh issue list --label spec-drift --state open --json title \
+              --jq '.[].title' | grep -qxF "$title"; then
+            echo "already open"
+            exit 0
+          fi
+          {
+            echo '```'
+            cat drift.txt
+            echo '```'
+            echo
+            echo 'Review the diff, update the wire model and the pins in `xtask`, and re-check the'
+            echo 'errata registry — an erratum Hubject has *fixed* must be removed, not left standing.'
+          } > body.md
+          gh issue create --title "$title" --label spec-drift --body-file body.md
+
+      # The job still fails, so the badge and the run list say so too.
+      - if: steps.check.outputs.moved == 'true'
+        run: exit 1

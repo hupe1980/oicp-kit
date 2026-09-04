@@ -1,0 +1,197 @@
+[workspace]
+members = ["xtask"]
+# `cargo test`, `cargo build` and friends act on the library alone; `xtask` is repository
+# automation and is run explicitly with `cargo run -p xtask`.
+default-members = ["."]
+
+[package]
+name = "oicp-kit"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "OICP (Open InterCharge Protocol) toolkit for EV roaming through Hubject: spec-exact typed models for OICP 2.3, mTLS client, axum server, EVSE delta sync, CDR pre-flight and a Hubject broker simulator."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/hupe1980/oicp-kit"
+homepage = "https://github.com/hupe1980/oicp-kit"
+documentation = "https://docs.rs/oicp-kit"
+authors = ["hupe1980"]
+readme = "README.md"
+keywords = ["oicp", "hubject", "ev", "charging", "roaming"]
+categories = ["network-programming", "web-programming", "api-bindings"]
+# Authoritative, because `cargo package` does not always honour `.gitignore` — it shipped
+# 1282 files of `cargo mutants` output that git was ignoring perfectly well.
+exclude = ["/specs", "/.github", "/site", "/xtask", "/concepts", "/fuzz", "mutants.out*"]
+
+[lib]
+name = "oicp_kit"
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+# `raw_value` lets a page be decoded envelope-first, leaving each record as unparsed JSON, so a
+# crawl can fail one record instead of the page it arrived on.
+serde_json = { version = "1.0.151", features = ["raw_value"] }
+rust_decimal = { version = "1.42.1", default-features = false, features = ["std", "serde"] }
+time = { version = "0.3.55", default-features = false, features = ["std", "formatting", "parsing", "macros"] }
+thiserror = "2.0.20"
+bon = "3.10.0"
+
+# transport
+http = { version = "1.5.0", optional = true }
+
+# client
+futures-core = { version = "0.3.34", optional = true }
+futures-util = { version = "0.3.34", optional = true, default-features = false, features = ["std"] }
+reqwest = { version = "0.12.28", optional = true, default-features = false, features = [
+    "rustls-tls-manual-roots",
+    "json",
+    "http2",
+    "charset",
+] }
+# The PEM parsing that rustls-pemfile used to wrap. That crate is unmaintained and archived
+# (RUSTSEC-2025-0134); this is the code it was a thin wrapper around, and `reqwest` already
+# pulls it in for rustls.
+rustls-pki-types = { version = "1.15.1", optional = true }
+serde_path_to_error = { version = "0.1.20", optional = true }
+tokio = { version = "1.53.1", optional = true, features = ["time", "rt", "sync"] }
+tracing = { version = "0.1.44", optional = true }
+
+# server
+axum = { version = "0.8.9", optional = true, default-features = false, features = [
+    "http1",
+    "json",
+    "query",
+    "tokio",
+] }
+tower = { version = "0.5.3", optional = true }
+
+# schema export
+schemars = { version = "1.2.2", optional = true }
+
+# cli
+clap = { version = "4.6.6", optional = true, features = ["derive", "env"] }
+
+[dev-dependencies]
+criterion = { version = "0.5.1", default-features = false, features = ["cargo_bench_support"] }
+insta = { version = "1.48.0", features = ["json"] }
+proptest = "1.11.0"
+serde_json = { version = "1.0.151", features = ["preserve_order"] }
+tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread"] }
+
+[features]
+default = ["cpo", "emp", "transport"]
+
+# ---- wire models -------------------------------------------------------
+## The CPO half of the OICP 2.3 wire model: pushes, authorization, CDRs, notifications.
+cpo = []
+## The EMP half of the OICP 2.3 wire model: pulls, authorization responses, CDR retrieval.
+##
+## Depends on `cpo` because the objects an EMP *receives* are the objects a CPO *sends*: there is
+## one `ChargeDetailRecord` in this crate, not two. Modelling them separately is how the two sides
+## of a settlement drift apart.
+emp = ["cpo"]
+
+# ---- layers ------------------------------------------------------------
+## Endpoint table, page envelope, `Acknowledgement`/`StatusCode` error mapping.
+transport = ["dep:http"]
+## Async OICP client over `reqwest` with mutual TLS.
+client = [
+    "transport",
+    "cpo",
+    "emp",
+    # The client offers `push_evse_data_plan`, which is how a CPO synchronises a fleet without
+    # reaching for the destructive `fullLoad`. A feature that only compiles when another happens
+    # to be on is not a feature.
+    "sync",
+    "dep:futures-core",
+    "dep:futures-util",
+    "dep:reqwest",
+    "dep:rustls-pki-types",
+    "dep:serde_path_to_error",
+    "dep:tokio",
+    "dep:tracing",
+]
+## Async OICP server over `axum` — the Hubject-facing half of a partner.
+server = ["transport", "cpo", "emp", "dep:axum", "dep:tower", "dep:tokio", "dep:tracing", "dep:serde_path_to_error"]
+## EVSE data delta engine (EMP) and minimal-push planner (CPO).
+sync = ["emp"]
+## Typed German calibration-law (Eichrecht) data and verification plumbing.
+eichrecht = ["cpo"]
+## Samples, in-memory stores and `MockHubject` — a complete broker to test a partner against.
+testkit = ["transport", "sync"]
+## `JsonSchema` derives for every wire type.
+schema = ["dep:schemars"]
+## The `oicp` command line tool.
+cli = ["full", "dep:clap", "tokio/rt-multi-thread", "tokio/macros", "tokio/signal"]
+
+## Everything except the CLI binary.
+full = ["cpo", "emp", "transport", "client", "server", "sync", "eichrecht", "testkit", "schema"]
+
+[[bin]]
+name = "oicp"
+path = "src/bin/oicp.rs"
+required-features = ["cli"]
+
+# Integration tests each need the feature set they exercise; without these they would fail to
+# compile under `--no-default-features` and under partial feature selections.
+# Each suite declares the features it exercises *and* the ones its fixtures come from. Leaving
+# `testkit` out of a suite that builds a sample makes `cargo check --features emp` fail to build.
+[[test]]
+name = "wire"
+required-features = ["cpo", "emp", "testkit"]
+
+[[test]]
+name = "errata"
+required-features = ["cpo", "emp", "testkit"]
+
+[[test]]
+name = "properties"
+required-features = ["cpo", "emp", "sync", "testkit"]
+
+[[test]]
+name = "delta_sync"
+required-features = ["sync", "testkit"]
+
+[[test]]
+name = "over_http"
+required-features = ["client", "server", "testkit"]
+
+[[test]]
+name = "end_to_end"
+required-features = ["testkit", "server", "eichrecht"]
+
+[[test]]
+name = "snapshots"
+required-features = ["cpo", "emp", "transport", "testkit"]
+
+[[bench]]
+name = "wire"
+harness = false
+required-features = ["emp", "testkit", "sync"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints.rust]
+missing_docs = "deny"
+unsafe_code = "forbid"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs)'] }
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+# A trait method declared `async fn` must be implemented as one even when the body does not
+# await, which is most of the server's handler impls and every test double.
+unused_async = "allow"
+unused_async_trait_impl = "allow"
+# The Hubject-facing handlers return `Result<T, Acknowledgement>` / `Result<T, Response>`, where the
+# `Err` variant *is* the answer to send rather than an exceptional path. Boxing a value constructed
+# once per request would trade clarity for nothing.
+result_large_err = "allow"
+needless_pass_by_value = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+struct_excessive_bools = "allow"
+too_many_lines = "allow"
+doc_markdown = "allow"

@@ -1,0 +1,17 @@
+[package]
+name = "xtask"
+version = "0.0.0"
+edition = "2024"
+publish = false
+description = "Repository automation for oicp-kit; not published."
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+serde = "1.0.229"
+serde_json = "1.0.151"
+
+# `seed-fuzz` writes the crate's own conformant messages into the fuzz corpus, so the seeds are
+# derived from the model rather than committed and left to rot beside it.
+[dependencies.oicp-kit]
+path = ".."
+features = ["cpo", "emp", "transport", "sync", "testkit"]

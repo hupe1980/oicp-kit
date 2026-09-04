@@ -1,0 +1,11 @@
+---
+source: tests/snapshots.rs
+expression: "json(&Acknowledgement::success())"
+---
+{
+  "Result": true,
+  "StatusCode": {
+    "Code": "000",
+    "Description": "Success"
+  }
+}

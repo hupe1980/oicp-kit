@@ -1,0 +1,62 @@
+---
+source: tests/snapshots.rs
+expression: "json(&samples::evse_data_record(\"DE*ABC*E1\"))"
+---
+{
+  "EvseID": "DE*ABC*E1",
+  "ChargingStationId": "TEST 1",
+  "ChargingStationNames": [
+    {
+      "lang": "en",
+      "value": "ABC Charging Station Test"
+    },
+    {
+      "lang": "de",
+      "value": "ABC Testladestation"
+    }
+  ],
+  "HardwareManufacturer": "Charger Hardware Muster Company",
+  "Address": {
+    "Country": "DEU",
+    "City": "Berlin",
+    "Street": "EUREF CAMPUS",
+    "PostalCode": "10829",
+    "HouseNum": "22",
+    "Region": "Berlin",
+    "TimeZone": "UTC+01:00"
+  },
+  "GeoCoordinates": {
+    "Google": {
+      "Coordinates": "52.480495 13.356465"
+    }
+  },
+  "Plugs": [
+    "Type 2 Outlet"
+  ],
+  "DynamicPowerLevel": true,
+  "ChargingFacilities": [
+    {
+      "PowerType": "AC_3_PHASE",
+      "Voltage": 480,
+      "Amperage": 32,
+      "Power": 22
+    }
+  ],
+  "RenewableEnergy": true,
+  "CalibrationLawDataAvailability": "Local",
+  "AuthenticationModes": [
+    "NFC RFID Classic",
+    "REMOTE"
+  ],
+  "PaymentOptions": [
+    "Contract"
+  ],
+  "ValueAddedServices": [
+    "Reservation"
+  ],
+  "Accessibility": "Free publicly accessible",
+  "HotlinePhoneNumber": "+49123123123123",
+  "IsOpen24Hours": true,
+  "IsHubjectCompatible": true,
+  "DynamicInfoAvailable": "true"
+}

@@ -1,0 +1,22 @@
+---
+source: tests/snapshots.rs
+expression: rendered
+---
+AuthorizeStart                     charging         v21   calls    serves   ack  /charging/v21/operators/{operatorID}/authorize/start
+AuthorizeStop                      charging         v21   calls    serves   ack  /charging/v21/operators/{operatorID}/authorize/stop
+AuthorizeRemoteStart               charging         v21   serves   calls    ack  /charging/v21/providers/{providerID}/authorize-remote/start
+AuthorizeRemoteStop                charging         v21   serves   calls    ack  /charging/v21/providers/{providerID}/authorize-remote/stop
+ChargeDetailRecord                 cdrmgmt          v22   calls    serves   ack  /cdrmgmt/v22/operators/{operatorID}/charge-detail-record
+GetChargeDetailRecords             cdrmgmt          v22   -        calls    page /cdrmgmt/v22/providers/{providerID}/get-charge-detail-records-request
+PushAuthenticationData             authdata         v21   -        calls    ack  /authdata/v21/providers/{providerID}/push-request
+AuthorizeRemoteReservationStart    reservation      v11   serves   calls    ack  /reservation/v11/providers/{providerID}/reservation-start-request
+AuthorizeRemoteReservationStop     reservation      v11   serves   calls    ack  /reservation/v11/providers/{providerID}/reservation-stop-request
+PushEvseData                       evsepush         v23   calls    -        ack  /evsepush/v23/operators/{operatorID}/data-records
+PullEvseData                       evsepull         v23   -        calls    page /evsepull/v23/providers/{providerID}/data-records
+PushEvseStatus                     evsepush         v21   calls    -        ack  /evsepush/v21/operators/{operatorID}/status-records
+PullEvseStatus                     evsepull         v21   -        calls    ack  /evsepull/v21/providers/{providerID}/status-records
+PushPricingProductData             dynamicpricing   v10   calls    -        ack  /dynamicpricing/v10/operators/{operatorID}/pricing-products
+PullPricingProductData             dynamicpricing   v10   -        calls    ack  /dynamicpricing/v10/providers/{providerID}/pricing-products
+PushEvsePricing                    dynamicpricing   v10   calls    -        ack  /dynamicpricing/v10/operators/{operatorID}/evse-pricing
+PullEvsePricing                    dynamicpricing   v10   -        calls    ack  /dynamicpricing/v10/providers/{providerID}/evse-pricing
+ChargingNotifications              notificationmgmt v11   calls    serves   ack  /notificationmgmt/v11/charging-notifications

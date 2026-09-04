@@ -1,0 +1,11 @@
+---
+source: tests/snapshots.rs
+expression: "json(&Acknowledgement::failure(Code::UnknownEvseId))"
+---
+{
+  "Result": false,
+  "StatusCode": {
+    "Code": "603",
+    "Description": "Unknown EVSE ID"
+  }
+}

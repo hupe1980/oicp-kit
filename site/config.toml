@@ -1,0 +1,40 @@
+base_url = "https://hupe1980.github.io/oicp-kit"
+title = "oicp-kit"
+description = "A Rust toolkit for OICP (Open InterCharge Protocol): a spec-exact wire model for OICP 2.3, a mutual-TLS client, an axum server, an EVSE delta-sync engine, CDR pre-flight, and a Hubject broker simulator."
+default_language = "en"
+
+compile_sass = true
+build_search_index = true
+generate_feeds = true
+feed_filenames = ["atom.xml"]
+
+taxonomies = []
+
+[markdown]
+smart_punctuation = false
+insert_anchor_links = "heading"
+external_links_target_blank = true
+external_links_no_referrer = true
+
+[markdown.highlighting]
+style = "inline"
+light_theme = "ayu-light"
+dark_theme = "ayu-dark"
+add_color_scheme = true
+
+[search]
+index_format = "elasticlunr_json"
+
+[link_checker]
+# Links into the repository resolve only once a change is pushed, and docs.rs links only once the
+# crate is published. The site build must not depend on either.
+skip_prefixes = ["https://github.com/hupe1980/oicp-kit/", "https://docs.rs/oicp-kit"]
+
+[extra]
+repo = "https://github.com/hupe1980/oicp-kit"
+crate = "https://crates.io/crates/oicp-kit"
+api_docs = "https://docs.rs/oicp-kit"
+author = "hupe1980"
+# Shown in the tab bar of the hero code sample and in social cards.
+tagline = "OICP for Rust, both directions"
+keywords = "OICP, Open InterCharge Protocol, Hubject, Rust, EV roaming, EV charging, CPO, EMP, intercharge, OICP 2.3, charge point, e-mobility, Eichrecht, delta sync"

@@ -1,0 +1,130 @@
+name: release
+
+# Publishing is the one irreversible thing this repository does: a version on crates.io can be
+# yanked but never replaced, and never reused. So the trigger is a tag — an explicit human act —
+# and everything that can be checked is checked *before* anything is uploaded.
+#
+# Needs one secret, `CARGO_REGISTRY_TOKEN`, on the `crates-io` environment. Put required reviewers
+# on that environment to make the upload a two-person job.
+#
+#   cargo run -p xtask -- all --upstream   # locally first
+#   git tag v0.1.0 && git push origin v0.1.0
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+  # A rehearsal: runs every gate below and stops short of publishing.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to rehearse, without the leading v
+        required: true
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  verify:
+    name: verify ${{ github.event.inputs.version || github.ref_name }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+
+      # The classic release bug: a tag that does not match the manifest. Everything downstream —
+      # the crates.io version, the release notes, the compare link — reads one or the other, and
+      # they have to be the same number.
+      - name: the tag, the manifest and the changelog agree
+        id: version
+        run: |
+          set -euo pipefail
+          version="${{ github.event.inputs.version || github.ref_name }}"
+          version="${version#v}"
+          manifest=$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[] | select(.name == "oicp-kit") | .version')
+          if [ "$version" != "$manifest" ]; then
+            echo "::error::tag says $version, Cargo.toml says $manifest"
+            exit 1
+          fi
+          if ! grep -qxF "## [$version]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## [$version]' section"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - run: cargo fmt --all --check
+      - run: cargo clippy --all-features --all-targets --locked -- -D warnings
+      - run: cargo test --all-features --locked
+      - run: cargo run -p xtask --locked -- no-floats
+
+      # A release claims to implement OICP 2.3 at the commits `PROTOCOL.md` pins. If Hubject has
+      # edited the specification in place since, that claim is stale — update the pins, or the wire
+      # model, before shipping. Needs no local `specs/`.
+      - run: cargo run -p xtask --locked -- spec-sync --upstream
+
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+
+      # Package exactly what will be uploaded, and compile it, before the upload can happen.
+      - run: cargo publish --dry-run --locked
+
+      # …and look at what went in. A dry run is happy to package anything under the size limit:
+      # `cargo package` does not always honour `.gitignore`, and once shipped 1282 files of
+      # mutation-testing output that git was ignoring. `exclude` in Cargo.toml is the fix; this is
+      # the check that it still works.
+      - name: the package contains only what it should
+        run: |
+          set -euo pipefail
+          allowed='^(\.cargo_vcs_info\.json|CHANGELOG\.md|Cargo\.lock|Cargo\.toml|Cargo\.toml\.orig|LICENSE-APACHE|LICENSE-MIT|README\.md|benches|clippy\.toml|deny\.toml|rustfmt\.toml|src|tests)$'
+          unexpected=$(cargo package --list --locked | cut -d/ -f1 | sort -u | grep -Ev "$allowed" || true)
+          if [ -n "$unexpected" ]; then
+            echo "::error::unexpected entries in the package: $unexpected"
+            exit 1
+          fi
+          cargo package --list --locked | wc -l
+
+  publish:
+    name: publish to crates.io
+    needs: verify
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: crates-io
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish --locked
+
+      # The notes are the CHANGELOG section for this version, so the two cannot drift.
+      - name: release notes from the changelog
+        run: |
+          set -euo pipefail
+          awk -v v="${{ needs.verify.outputs.version }}" '
+            $0 == "## [" v "]" { found = 1; next }
+            found && (/^## /  || /^\[[^]]+\]: /) { exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "::error::empty release notes"; exit 1; }
+
+      - name: github release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" --title "${{ github.ref_name }}" --notes-file notes.md

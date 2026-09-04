@@ -1,0 +1,16 @@
+---
+source: tests/snapshots.rs
+expression: rendered
+---
+OICP23-E001  eRoamingChargeDetailRecord.HubProviderID
+    Writes HubProviderID; accepts HubProviderId on input.
+OICP23-E002  EvseDataRecord.ChargingStationId
+    Writes ChargingStationId; accepts ChargingStationID on input.
+OICP23-E003  ChargingFacility.Power
+    Decodes as an exact decimal, so 22.5 arrives; Validate reports a non-integer or out-of-range value rather than refusing the record.
+OICP23-E004  eRoamingGetChargeDetailRecords.CDRForwarded
+    Writes CDRForwarded; accepts CDRForwarder on input.
+OICP23-E005  eRoamingAuthorizeRemoteReservationStart/Stop.EMPPartnerSessionID
+    Writes EMPPartnerSessionID; accepts EMPPartnerSessionId on input.
+OICP23-E006  eRoamingChargingNotificationProgress.ChargingDuration
+    Documents and checks the CPO document's definition: EventOccurred - ChargingStart.

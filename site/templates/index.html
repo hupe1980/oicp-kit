@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block body_class %}landing{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">Rust · OICP 2.3 · Hubject</p>
+    <h1>OICP for Rust,<br>both directions</h1>
+    <p class="lede">
+      A spec-exact wire model for OICP 2.3, a mutual-TLS client, an <code>axum</code> server for the
+      half Hubject calls, an EVSE delta-sync engine, CDR pre-flight, and a brokering system in a
+      process so you can integrate before you onboard. One crate, behind cargo features.
+    </p>
+
+    <div class="cta">
+      <a class="btn btn-primary" href="{{ get_url(path='@/docs/getting-started/install.md') }}">Get started</a>
+      <a class="btn" href="{{ config.extra.api_docs }}" rel="noopener">API reference</a>
+      <a class="btn btn-ghost" href="{{ config.extra.repo }}" rel="noopener">GitHub</a>
+    </div>
+
+    <div class="install">
+      <code>cargo add oicp-kit</code>
+      <button class="copy" type="button" data-copy="cargo add oicp-kit" aria-label="Copy install command">Copy</button>
+    </div>
+  </div>
+</section>
+
+<section class="pillars" aria-labelledby="pillars-h">
+  <h2 id="pillars-h" class="section-title">Three properties that decide quality</h2>
+  <div class="grid-3">
+    <article class="card">
+      <h3>Energy and money are never floats</h3>
+      <p>
+        Every OICP <code>number</code> is an exact decimal. No public field of any wire type is an
+        <code>f32</code> or <code>f64</code>, the sync engine has none either, and a repository
+        check enforces it in CI.
+      </p>
+      <p class="card-note">
+        OICP <em>defines</em> <code>ConsumedEnergy</code> as <code>MeterValueEnd&nbsp;−&nbsp;MeterValueStart</code>.
+        In <code>f64</code>, <code>10.1&nbsp;−&nbsp;0.1</code> is <code>10.000000000000002</code>.
+      </p>
+      <a class="card-link" href="{{ get_url(path='@/docs/concepts/numbers.md') }}">Numbers and money →</a>
+    </article>
+
+    <article class="card">
+      <h3>Identifiers are never rewritten</h3>
+      <p>
+        Every OICP identifier accepts two grammars — ISO 15118 and DIN SPEC 91286. This crate parses
+        both, exposes the country and operator, compares them semantically, and writes back the
+        exact text that arrived.
+      </p>
+      <p class="card-note">
+        Hubject matches the identifier in your URL against your TLS certificate <em>as text</em>. A
+        library that normalises <code>DE*ABC</code> to <code>DEABC</code> earns a <code>017</code>
+        on every request.
+      </p>
+      <a class="card-link" href="{{ get_url(path='@/docs/concepts/identifiers.md') }}">Identifiers →</a>
+    </article>
+
+    <article class="card">
+      <h3>Parsing and conformance are separate</h3>
+      <p>
+        One operator's malformed <code>HotlinePhoneNumber</code> cannot make a page of two thousand
+        EVSE records undecodable. The value arrives; validation reports it with an RFC&nbsp;6901 JSON
+        Pointer.
+      </p>
+      <p class="card-note">
+        Parse permissively, validate explicitly, construct strictly.
+      </p>
+      <a class="card-link" href="{{ get_url(path='@/docs/concepts/parse-validate-construct.md') }}">The rule →</a>
+    </article>
+  </div>
+</section>
+
+<section class="showcase" aria-labelledby="showcase-h">
+  <div class="showcase-inner">
+    <div class="showcase-text">
+      <h2 id="showcase-h">A brokering system, in a process</h2>
+      <p>
+        Testing against the real thing needs a signed contract, certificates from Hubject's CA, and
+        access to their QA environment — weeks before the first request. And the failures that cost
+        time are <em>sequences</em>, not single messages.
+      </p>
+      <p>
+        <code>MockHubject</code> routes the way the real broker does, tracks sessions, and answers
+        with the specification's own status codes. Offline, in a unit test.
+      </p>
+      <a class="card-link" href="{{ get_url(path='@/docs/layers/testkit.md') }}">Testkit →</a>
+    </div>
+    <div class="showcase-code">
+      {{ load_data(path="snippets/mock.md", format="plain") | markdown | safe }}
+    </div>
+  </div>
+</section>
+
+<section class="features" aria-labelledby="features-h">
+  <h2 id="features-h" class="section-title">What is in the box</h2>
+  <div class="grid-4">
+    <a class="tile" href="{{ get_url(path='@/docs/layers/transport.md') }}">
+      <h3>Transport</h3>
+      <p>The endpoint table — service × version → path — the page envelope, and the error mapping that makes <code>HTTP 200</code> mean success.</p>
+    </a>
+    <a class="tile" href="{{ get_url(path='@/docs/layers/client.md') }}">
+      <h3>Client</h3>
+      <p>Mutual TLS with a local certificate check, streaming crawls, and retries that will not start a session twice.</p>
+    </a>
+    <a class="tile" href="{{ get_url(path='@/docs/layers/server.md') }}">
+      <h3>Server</h3>
+      <p>The half Hubject calls, which most implementations skip. One trait per role; if it compiles, your surface is complete.</p>
+    </a>
+    <a class="tile" href="{{ get_url(path='@/docs/layers/sync.md') }}">
+      <h3>Delta sync</h3>
+      <p>The <code>LastCall</code> engine, with a property test proving any delta sequence converges on a full pull.</p>
+    </a>
+    <a class="tile" href="{{ get_url(path='@/docs/layers/eichrecht.md') }}">
+      <h3>CDR pre-flight</h3>
+      <p>The calibration-law and plausibility rules, checked before submission rather than weeks later in a dispute.</p>
+    </a>
+    <a class="tile" href="{{ get_url(path='@/docs/layers/testkit.md') }}">
+      <h3>Testkit</h3>
+      <p><code>MockHubject</code>, validated samples, and the onboarding scenarios as runnable checks.</p>
+    </a>
+    <a class="tile" href="{{ get_url(path='@/docs/reference/errata.md') }}">
+      <h3>Errata</h3>
+      <p>Six places Hubject's own OICP 2.3 documents contradict each other, with what breaks and what this crate emits.</p>
+    </a>
+    <a class="tile" href="{{ get_url(path='@/docs/getting-started/cli.md') }}">
+      <h3>CLI</h3>
+      <p><code>validate</code>, <code>id</code>, <code>cdr</code>, <code>endpoints</code>, <code>scenarios</code>, <code>errata</code>.</p>
+    </a>
+  </div>
+</section>
+
+<section class="numbers" aria-labelledby="numbers-h">
+  <h2 id="numbers-h" class="section-title">Checked against the specification, not against intent</h2>
+  <p class="section-lede">
+    The vendored Hubject documents are pinned to the commits this crate was written against, and
+    repository automation compares the crate with them on every push.
+  </p>
+  <ul class="stats">
+    <li><strong>18</strong><span>operations, each diffed against Hubject's OpenAPI</span></li>
+    <li><strong>6</strong><span>spec contradictions found, recorded and handled</span></li>
+    <li><strong>230+</strong><span>tests across six targets, plus property tests</span></li>
+    <li><strong>0</strong><span>floats in the wire model or the engines</span></li>
+  </ul>
+  <p class="center">
+    <a class="btn" href="{{ get_url(path='@/docs/reference/verification.md') }}">How it is verified</a>
+  </p>
+</section>
+{% endblock %}

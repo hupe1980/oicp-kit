@@ -1,0 +1,8 @@
+---
+source: tests/snapshots.rs
+expression: "json(&samples::evse_status_record(\"DE*ABC*E1\", EvseStatus::Available))"
+---
+{
+  "EvseID": "DE*ABC*E1",
+  "EvseStatus": "Available"
+}

@@ -1,0 +1,42 @@
+name: pages
+
+# `site/public` is generated and gitignored, so the deployed site is built here from `site/` on
+# every push to main. CI builds and link-checks it on pull requests; this is the half that ships.
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and never cancel one half-done.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: build and deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: zola
+      - run: zola --root site build
+      # Follows every internal link, so a broken cross-reference fails the deploy rather than
+      # shipping a 404 into the published guide.
+      - run: zola --root site check
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/public
+      - id: deploy
+        uses: actions/deploy-pages@v4

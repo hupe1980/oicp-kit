@@ -1,0 +1,13 @@
+---
+source: tests/snapshots.rs
+expression: "json(&samples::authorize_start_request(\"DE*ABC*E1\"))"
+---
+{
+  "OperatorID": "DE*ABC",
+  "EvseID": "DE*ABC*E1",
+  "Identification": {
+    "RFIDMifareFamilyIdentification": {
+      "UID": "7568290FFF765F"
+    }
+  }
+}

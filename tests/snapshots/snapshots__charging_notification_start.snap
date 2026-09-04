@@ -1,0 +1,18 @@
+---
+source: tests/snapshots.rs
+expression: "json(&ChargingNotification::Start(samples::charging_notification_start(\"DE*ABC*E1\",\nsamples::session_id())))"
+---
+{
+  "Type": "Start",
+  "SessionID": "f98efba4-02d8-4fa0-b810-9a9d50d2c527",
+  "Identification": {
+    "RFIDMifareFamilyIdentification": {
+      "UID": "7568290FFF765F"
+    }
+  },
+  "EvseID": "DE*ABC*E1",
+  "ChargingStart": "2020-09-23T14:05:00.000Z",
+  "SessionStart": "2020-09-23T14:00:00.000Z",
+  "MeterValueStart": 0,
+  "OperatorID": "DE*ABC"
+}
